@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="manifest" href="manifest.json">
+        <script>
+            if (typeof navigator.serviceWorker !== 'undefined') { // Если браузер поддерживает serviceworker
+                navigator.serviceWorker.register('serviceworker.js') //Зарегистрировать serviceworker из файла.
+            }
+        </script>
+		<style>
+			*{ /*CSS ресет - сброс значений по умолчанию*/
+				box-sizing: border-box;
+				margin: 0px;
+				padding: 0px;
+			}
+			body {
+    			font-family: Arial, sans-serif;
+   			 	display: flex;
+    			justify-content: center;
+    			align-items: center;
+    			height: 100vh;
+    			margin: 0;
+    			background-color: #f0f0f0;
+			}
+
+			.calculator {
+    			background-color: #333;
+            	border-radius: 10px;
+            	padding: 20px;
+            	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            	width: 300px;
+			}
+
+			.display {
+    			background-color: #eee;
+            	border-radius: 5px;
+            	padding: 10px;
+            	margin-bottom: 10px;
+            	text-align: right;
+            	font-size: 24px;
+            	height: 45px;
+			}
+
+			.buttons {
+   				display: grid;
+            	grid-template-columns: repeat(4, 1fr);
+            	grid-gap: 10px;
+			}
+
+			button {
+    			border: none;
+            	border-radius: 5px;
+            	padding: 15px;
+            	font-size: 18px;
+            	cursor: pointer;
+            	transition: background-color 0.2s;
+			}
+
+			button:hover {
+    			opacity: 0.8;
+			}
+
+			button:active {
+    			background-color: #ffffff;
+			}
+
+			.clear{
+				background-color: #e73a3a;
+			}
+
+			.equal{
+				grid-column: span 2;
+			}
+
+			.number {
+            	background-color: #666;
+            	color: white;
+       	 	}
+			.operator {
+            	background-color: #ff9500;
+            	color: white;
+        	}
+
+		</style>
+	</head>
+	<body>
+        <button id="install" class="button" hidden>Установить на телефон</button>
+		<div class="calculator">
+			<div class="display">0</div>
+			<div class="buttons">
+				<button class="clear" onclick="clearDisplay()">C</button>
+                <button onclick="procent()">%</button>
+                <button onclick="sqrt()">√</button>
+                <button onclick="power()">x^y</button>
+
+                <button class="operator" onclick="Operator('/')">/</button>
+				<button class="number" onclick="Digit('1')">1</button>
+				<button class="number" onclick="Digit('2')">2</button>
+				<button class="number" onclick="Digit('3')">3</button>
+
+				<button class="operator" onclick="Operator('*')">*</button>
+				<button class="number" onclick="Digit('4')">4</button>
+				<button class="number" onclick="Digit('5')">5</button>
+				<button class="number" onclick="Digit('6')">6</button>
+
+				<button class="operator" onclick="Operator('-')">-</button>
+				<button class="number" onclick="Digit('7')">7</button>
+				<button class="number" onclick="Digit('8')">8</button>
+				<button class="number" onclick="Digit('9')">9</button>
+
+				<button class="operator" onclick="Operator('+')">+</button>
+				<button onclick="prop()">1/x</button>
+				<button class="number" onclick="Digit('0')">0</button>
+				<button onclick="Decimal()">.</button>
+
+				<button class="equal" onclick="calculate()">=</button>
+
+			</div>
+		</div>
+	</body>
+
+	<script>
+		let currentInput = '0';
+        let previousInput = '';
+        let operation = null;
+        let resetInput = false;
+
+        const display = document.querySelector('.display');
+
+        function updateDisplay() {
+            display.textContent = currentInput;
+        }
+
+        function Digit(number) {
+            if (currentInput === '0' || resetInput) {
+                currentInput = number;
+                resetInput = false;
+            } else {
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+
+        function Decimal() {
+            if (resetInput) {
+                currentInput = '0.';
+                resetInput = false;
+                updateDisplay();
+                return;
+            }
+
+            if (!currentInput.includes('.')) {
+                currentInput += '.';
+                updateDisplay();
+            }
+        }
+
+        function Operator(op) {
+            if (operation !== null) calculate();
+            previousInput = currentInput;
+            operation = op;
+            resetInput = true;
+        }
+
+        function calculate() {
+            let result;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            if (isNaN(prev) || isNaN(current)) return;
+
+            switch (operation) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    result = prev / current;
+                    break;
+				 case '^':
+                    result = Math.pow(prev, current);
+                    break;
+                default:
+                    return;
+            }
+
+            currentInput = result.toString();
+            operation = null;
+            previousInput = '';
+            resetInput = true;
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentInput = '0';
+            previousInput = '';
+            operation = null;
+            updateDisplay();
+        }
+		function sqrt() {
+            const num = parseFloat(currentInput);
+            if (num >= 0) {
+                currentInput = Math.sqrt(num).toString();
+                updateDisplay();
+            } else {
+                currentInput = 'Ошибка';
+                updateDisplay();
+                setTimeout(clearDisplay, 1000);
+            }
+        }
+		function power() {
+            previousInput = currentInput;
+            operation = '^';
+            resetInput = true;
+        }
+		function prop() {
+            const num = parseFloat(currentInput);
+            if (num !== 0) {
+                currentInput = (1 / num).toString();
+                updateDisplay();
+            } else {
+                currentInput = 'Ошибка';
+                updateDisplay();
+                setTimeout(clearDisplay, 1000);
+            }
+        }
+
+        function procent() {
+            const num = parseFloat(currentInput);
+            const prev = parseFloat(previousInput);
+
+            if (isNaN(prev) || operation === null) {
+                // Если нет операции, просто делим на 100
+                currentInput = (num / 100).toString();
+                updateDisplay();
+                return;
+            }
+
+            let result;
+            switch (operation) {
+                case '+':
+                    result = prev + (prev * num / 100);
+                    break;
+                case '-':
+                    result = prev - (prev * num / 100);
+                    break;
+                case '*':
+                    result = prev * (num / 100);
+                    break;
+                case '/':
+                    if (num === 0) {
+                        currentInput = 'Ошибка';
+                        updateDisplay();
+                        setTimeout(clearDisplay, 1000);
+                        return;
+                    }
+                    result = prev / (num / 100);
+                    break;
+                default:
+                    return;
+            }
+
+            currentInput = result.toString();
+            operation = null;
+            previousInput = '';
+            resetInput = true;
+            updateDisplay();
+        }
+
+		// Инициализация дисплея
+        updateDisplay();
+
+        let installPrompt = null; // Создается запрос на установку
+	    const installButton = document.querySelector("#install");// Получаем кнопку из документа
+
+	    window.addEventListener("beforeinstallprompt", function(event){ // Вешаем на окно обработчик события
+						 // beforeinstallprompt которое выдает PWA при открытии
+						// На устройстве которое поддерживает установку
+		    event.preventDefault();  // Запрещает обработку события по умолчанию
+		    installPrompt = event;    // запоминает ссылку на запрос на установку
+  		    installButton.removeAttribute("hidden"); // Проявляем кнопку, убирая атрибут 'hidden'
+		});
+
+	    installButton.addEventListener("click", async function()  {  // Добавляем обработчик события на кнопку
+ 		    if (!installPrompt) { // Если нет вдруг ссылки на запрос на установку то завершаем функцию
+		        return;
+		    }
+		    const result = await installPrompt.prompt(); // Ждем ответа пользователя на предложение установить приложение
+  		    alert(`Результат установки: ${result.outcome}`); // Выводим результат
+ 		    disableInAppInstallPrompt(); // Запрещаем далее выдавать запрос на установку
+	    });
+
+    function disableInAppInstallPrompt() {  // Запрет запроса на установку
+        installPrompt = null; // убираем ссылку на запрос
+        installButton.setAttribute("hidden", ""); // Ставим на кнопку атрибут 'hidden'
+    }
+    window.addEventListener("appinstalled", function()  { // при событии 'appinstalled' приложение установлено
+        disableInAppInstallPrompt();   // Спрятать запрос на его установку.
+    });
+	</script>
+</html>
